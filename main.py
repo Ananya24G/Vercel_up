@@ -1,43 +1,38 @@
-from fastapi import FastAPI, Query, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import csv
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import json
+import os
 
-app = FastAPI()
+# os.environ.get('54367')
 
-# Enable CORS to allow requests from any origin
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET"],
-    allow_headers=["*"],
-)
+app = Flask(__name__)
+CORS(app)  # Enable CORS to allow GET requests from any origin
 
-# Load the CSV file into memory
-def load_students_data():
-    students = []
-    with open("students.csv", mode="r") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            students.append({
-                "studentId": int(row["studentId"]),
-                "class": row["class"]
-            })
-    return students
+# Load student data from the JSON file
+with open("q-vercel-python.json") as f:
+    students = json.load(f)
 
-# Endpoint to get student data
-@app.get("/api")
-def get_students(classes: list[str] = Query(default=[], alias="class")):
-    students_data = load_students_data()
+@app.route('/api', methods=['GET'])
+def get_marks():
+    # Get names from query parameters
+    names = request.args.getlist('name')
     
-    # Filter students by class if classes are provided
-    if classes:
-        filtered_students = [student for student in students_data if student["class"] in classes]
-        return {"students": filtered_students}
+    # Retrieve the marks for the provided names
+    marks = []
+    for name in names:
+        # Iterate over students list and check if the student's name matches
+        student_found = False
+        for student in students:
+            if student.get('name') == name:
+                marks.append(student.get('marks', "Marks not found"))
+                student_found = True
+                break
+        
+        if not student_found:
+            marks.append("Student not found")
     
-    # Return all students if no class filter is applied
-    return {"students": students_data}
+    return jsonify({"marks": marks})
 
-# Run the server
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    app.run(debug=True)
+

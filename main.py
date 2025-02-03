@@ -11,6 +11,10 @@ with open("q-vercel-python.json", "r") as file:
 # Convert list to a dictionary for faster lookups
 student_dict = {student["name"]: student["marks"] for student in students}
 
+@app.route('/', methods=['GET'])
+def home():
+    return "Hello, World!"
+
 @app.route('/api', methods=['GET'])
 def get_marks():
     names = request.args.getlist('name')
